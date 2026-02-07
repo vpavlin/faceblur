@@ -14,7 +14,7 @@ A privacy-first face blurring and anonymization tool that runs entirely in your 
 
 ## Live Demo
 
-Visit: `https://YOUR-USERNAME.github.io/faceblur/`
+Visit: https://vpavlin.github.io/faceblur/
 
 ## Local Usage
 
