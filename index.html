@@ -345,8 +345,13 @@
         
         <div class="upload-area" id="uploadArea">
             <h2>📸 Choose or Take a Photo</h2>
-            <p>Click here to upload an image or take a photo</p>
-            <input type="file" id="imageInput" accept="image/*" capture="user">
+            <p>Select how you want to provide an image</p>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
+                <button id="galleryBtn" style="background: #667eea;">📁 Choose from Gallery</button>
+                <button id="cameraBtn" style="background: #764ba2;">📷 Take Photo</button>
+            </div>
         </div>
         
         <div class="sensitivity-control" id="sensitivityControl">
@@ -430,6 +435,9 @@
         // DOM elements
         const uploadArea = document.getElementById('uploadArea');
         const imageInput = document.getElementById('imageInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const galleryBtn = document.getElementById('galleryBtn');
+        const cameraBtn = document.getElementById('cameraBtn');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const status = document.getElementById('status');
@@ -635,13 +643,22 @@
             }
         }
         
-        // Handle image upload
-        uploadArea.addEventListener('click', () => {
+        // Handle gallery button
+        galleryBtn.addEventListener('click', () => {
             if (!modelsLoaded) {
                 showStatus('⏳ Please wait for AI models to load first...', 'loading');
                 return;
             }
             imageInput.click();
+        });
+        
+        // Handle camera button
+        cameraBtn.addEventListener('click', () => {
+            if (!modelsLoaded) {
+                showStatus('⏳ Please wait for AI models to load first...', 'loading');
+                return;
+            }
+            cameraInput.click();
         });
         
         // Function to detect faces
@@ -689,8 +706,8 @@
             }
         }
         
-        imageInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
+        // Handle image loading (shared function for both inputs)
+        async function handleImageFile(file) {
             if (!file) return;
             
             if (!modelsLoaded) {
@@ -716,6 +733,16 @@
             };
             
             img.src = URL.createObjectURL(file);
+        }
+        
+        // Handle gallery input
+        imageInput.addEventListener('change', async (e) => {
+            await handleImageFile(e.target.files[0]);
+        });
+        
+        // Handle camera input
+        cameraInput.addEventListener('change', async (e) => {
+            await handleImageFile(e.target.files[0]);
         });
         
         // Sensitivity slider
