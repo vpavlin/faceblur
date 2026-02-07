@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Privacy Tool 🎭</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background: #f0f0ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area input {
+            display: none;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #764ba2;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        canvas {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .emoji-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .emoji-btn {
+            font-size: 32px;
+            padding: 10px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            min-width: 60px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .emoji-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .emoji-btn.selected {
+            background: #667eea;
+            transform: scale(1.15);
+        }
+        
+        .emoji-btn img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .custom-image-upload {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .custom-image-upload label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .custom-image-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+        
+        .custom-image-btn:hover {
+            background: #764ba2;
+        }
+        
+        .custom-images-gallery {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .custom-image-item {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .custom-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            cursor: pointer;
+        }
+        
+        .custom-image-item .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .sensitivity-control {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .sensitivity-control label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .slider {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .slider-value {
+            min-width: 80px;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .face-toggle {
+            position: absolute;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        
+        .face-toggle:hover {
+            transform: scale(1.2);
+            background: rgba(200, 0, 0, 1);
+        }
+        
+        .face-toggle.disabled {
+            background: rgba(100, 100, 100, 0.8);
+        }
+        
+        .face-toggle.disabled:hover {
+            background: rgba(80, 80, 80, 1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Face Privacy Tool</h1>
+        <p class="subtitle">Protect your privacy by blurring or hiding faces in photos - everything happens on your device!</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <h2>📸 Choose or Take a Photo</h2>
+            <p>Click here to upload an image or take a photo</p>
+            <input type="file" id="imageInput" accept="image/*" capture="user">
+        </div>
+        
+        <div class="sensitivity-control" id="sensitivityControl">
+            <label>🎯 Detection Sensitivity</label>
+            <div class="slider-container">
+                <span>Less</span>
+                <input type="range" min="0.1" max="0.9" step="0.05" value="0.5" class="slider" id="sensitivitySlider">
+                <span>More</span>
+                <span class="slider-value" id="sliderValue">0.50</span>
+            </div>
+            <button id="redetectBtn" style="margin-top: 10px; width: 100%;">🔄 Re-detect Faces</button>
+        </div>
+        
+        <div class="custom-image-upload" id="customImageUpload">
+            <label>🖼️ Custom Images</label>
+            <input type="file" id="customImageInput" accept="image/*" style="display: none;">
+            <button class="custom-image-btn" id="uploadCustomBtn">📤 Upload Custom Image</button>
+            <button class="custom-image-btn" id="clearCustomBtn" style="background: #dc3545;">🗑️ Clear All</button>
+            <div class="custom-images-gallery" id="customImagesGallery"></div>
+        </div>
+        
+        <div class="emoji-selector" id="emojiSelector" style="display: none;">
+            <button class="emoji-btn" data-emoji="😀">😀</button>
+            <button class="emoji-btn" data-emoji="😎">😎</button>
+            <button class="emoji-btn" data-emoji="🤖">🤖</button>
+            <button class="emoji-btn selected" data-emoji="😊">😊</button>
+            <button class="emoji-btn" data-emoji="🎭">🎭</button>
+            <button class="emoji-btn" data-emoji="😂">😂</button>
+            <button class="emoji-btn" data-emoji="🥳">🥳</button>
+            <button class="emoji-btn" data-emoji="😇">😇</button>
+            <button class="emoji-btn" data-emoji="🤩">🤩</button>
+            <button class="emoji-btn" data-emoji="😴">😴</button>
+            <button class="emoji-btn" data-emoji="🤔">🤔</button>
+            <button class="emoji-btn" data-emoji="😱">😱</button>
+            <button class="emoji-btn" data-emoji="👽">👽</button>
+            <button class="emoji-btn" data-emoji="👻">👻</button>
+            <button class="emoji-btn" data-emoji="🎃">🎃</button>
+            <button class="emoji-btn" data-emoji="💀">💀</button>
+            <button class="emoji-btn" data-emoji="🐶">🐶</button>
+            <button class="emoji-btn" data-emoji="🐱">🐱</button>
+            <button class="emoji-btn" data-emoji="🐼">🐼</button>
+            <button class="emoji-btn" data-emoji="🦄">🦄</button>
+        </div>
+        
+        <div class="controls" style="display: none;" id="controls">
+            <button id="blurBtn">🌫️ Blur Faces</button>
+            <button id="emojiBtn">😊 Emoji Faces</button>
+            <button id="downloadBtn" style="display: none;">💾 Download</button>
+        </div>
+        
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div class="info">
+            <strong>🔒 How it works:</strong><br>
+            1️⃣ Choose a photo from your device or take one with your camera<br>
+            2️⃣ The AI detects all faces automatically (happens on YOUR device)<br>
+            3️⃣ Click the red ✕ button on any face to exclude it from processing<br>
+            4️⃣ Choose from 20+ emojis or upload your own custom images<br>
+            5️⃣ Click to blur faces or replace them with emojis/images (only enabled faces)<br>
+            6️⃣ Download your privacy-protected photo!<br><br>
+            <strong>✨ Privacy First:</strong> All processing happens in your browser. No photos are sent to any server!<br>
+            <strong>🖼️ Custom Images:</strong> Upload your own images to cover faces - they're stored locally in your browser!
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedEmoji = '😊';
+        let selectedCustomImage = null; // For custom image mode
+        let faceDetections = [];
+        let disabledFaces = []; // Track which faces are disabled
+        let originalImage = null;
+        let modelsLoaded = false;
+        let detectionThreshold = 0.5;
+        let customImages = []; // Store custom images
+        
+        // DOM elements
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        const controls = document.getElementById('controls');
+        const blurBtn = document.getElementById('blurBtn');
+        const emojiBtn = document.getElementById('emojiBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const emojiSelector = document.getElementById('emojiSelector');
+        const sensitivityControl = document.getElementById('sensitivityControl');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+        const sliderValue = document.getElementById('sliderValue');
+        const redetectBtn = document.getElementById('redetectBtn');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const customImageUpload = document.getElementById('customImageUpload');
+        const customImageInput = document.getElementById('customImageInput');
+        const uploadCustomBtn = document.getElementById('uploadCustomBtn');
+        const clearCustomBtn = document.getElementById('clearCustomBtn');
+        const customImagesGallery = document.getElementById('customImagesGallery');
+        
+        // Show status message
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+        
+        // Load custom images from localStorage
+        function loadCustomImages() {
+            const stored = localStorage.getItem('faceblur_custom_images');
+            if (stored) {
+                try {
+                    customImages = JSON.parse(stored);
+                    renderCustomImagesGallery();
+                } catch (e) {
+                    console.error('Error loading custom images:', e);
+                    customImages = [];
+                }
+            }
+        }
+        
+        // Save custom images to localStorage
+        function saveCustomImages() {
+            try {
+                localStorage.setItem('faceblur_custom_images', JSON.stringify(customImages));
+            } catch (e) {
+                console.error('Error saving custom images:', e);
+                showStatus('⚠️ Storage limit reached. Please delete some images.', 'error');
+            }
+        }
+        
+        // Render custom images gallery
+        function renderCustomImagesGallery() {
+            customImagesGallery.innerHTML = '';
+            customImages.forEach((imgData, index) => {
+                const item = document.createElement('div');
+                item.className = 'custom-image-item';
+                
+                const img = document.createElement('img');
+                img.src = imgData;
+                img.onclick = () => selectCustomImage(imgData);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '×';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteCustomImage(index);
+                };
+                
+                item.appendChild(img);
+                item.appendChild(deleteBtn);
+                customImagesGallery.appendChild(item);
+            });
+        }
+        
+        // Select custom image
+        function selectCustomImage(imgData) {
+            selectedCustomImage = imgData;
+            selectedEmoji = null;
+            
+            // Deselect all emoji buttons
+            document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+            
+            // Auto-redraw if custom images are already applied
+            if (originalImage && faceDetections.length > 0 && downloadBtn.style.display === 'block') {
+                applyEmojiOrImage();
+                showStatus('✅ Custom image updated!', 'success');
+            } else {
+                showStatus('✅ Custom image selected! Click "😊 Emoji Faces" to apply.', 'success');
+            }
+        }
+        
+        // Delete custom image
+        function deleteCustomImage(index) {
+            customImages.splice(index, 1);
+            saveCustomImages();
+            renderCustomImagesGallery();
+            
+            if (customImages.length === 0) {
+                selectedCustomImage = null;
+            }
+            
+            showStatus('🗑️ Custom image deleted', 'success');
+        }
+        
+        // Create toggle buttons for each face
+        function createFaceToggles() {
+            // Remove existing toggles
+            document.querySelectorAll('.face-toggle').forEach(el => el.remove());
+            
+            if (!faceDetections.length) return;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            const scaleX = canvasRect.width / canvas.width;
+            const scaleY = canvasRect.height / canvas.height;
+            
+            faceDetections.forEach((detection, index) => {
+                const box = detection.detection.box;
+                const toggle = document.createElement('div');
+                toggle.className = 'face-toggle';
+                toggle.textContent = '✕';
+                toggle.dataset.index = index;
+                
+                // Position at top-right corner of face box
+                const left = canvasRect.left + (box.x + box.width - 15) * scaleX;
+                const top = canvasRect.top + (box.y - 15) * scaleY;
+                
+                toggle.style.left = `${left}px`;
+                toggle.style.top = `${top}px`;
+                
+                // Check if face is disabled
+                if (disabledFaces[index]) {
+                    toggle.classList.add('disabled');
+                }
+                
+                toggle.addEventListener('click', () => toggleFace(index));
+                
+                document.body.appendChild(toggle);
+            });
+        }
+        
+        // Toggle face enabled/disabled state
+        function toggleFace(index) {
+            disabledFaces[index] = !disabledFaces[index];
+            
+            // Update toggle button appearance
+            const toggle = document.querySelector(`.face-toggle[data-index="${index}"]`);
+            if (toggle) {
+                toggle.classList.toggle('disabled');
+            }
+            
+            // Redraw preview with updated state
+            drawFacePreview();
+            
+            const enabledCount = faceDetections.length - disabledFaces.filter(d => d).length;
+            showStatus(`✅ ${enabledCount} of ${faceDetections.length} face(s) will be processed`, 'success');
+        }
+        
+        // Draw face preview with boxes
+        function drawFacePreview() {
+            if (!originalImage) return;
+            
+            ctx.drawImage(originalImage, 0, 0);
+            
+            faceDetections.forEach((detection, index) => {
+                const box = detection.detection.box;
+                
+                if (disabledFaces[index]) {
+                    // Draw red X over disabled faces
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(box.x, box.y, box.width, box.height);
+                    
+                    // Draw X
+                    ctx.beginPath();
+                    ctx.moveTo(box.x, box.y);
+                    ctx.lineTo(box.x + box.width, box.y + box.height);
+                    ctx.moveTo(box.x + box.width, box.y);
+                    ctx.lineTo(box.x, box.y + box.height);
+                    ctx.stroke();
+                } else {
+                    // Draw normal blue box for enabled faces
+                    ctx.strokeStyle = '#667eea';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(box.x, box.y, box.width, box.height);
+                }
+            });
+        }
+        
+        // Load face detection models
+        async function loadModels() {
+            showStatus('🔄 Loading AI models (this may take a moment)...', 'loading');
+            try {
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                modelsLoaded = true;
+                showStatus('✅ AI models loaded! Ready to protect privacy!', 'success');
+                setTimeout(() => status.style.display = 'none', 3000);
+            } catch (error) {
+                showStatus('❌ Error loading models: ' + error.message, 'error');
+                console.error('Model loading error:', error);
+            }
+        }
+        
+        // Handle image upload
+        uploadArea.addEventListener('click', () => {
+            if (!modelsLoaded) {
+                showStatus('⏳ Please wait for AI models to load first...', 'loading');
+                return;
+            }
+            imageInput.click();
+        });
+        
+        // Function to detect faces
+        async function detectFaces() {
+            if (!originalImage) return;
+            
+            // Draw original image
+            ctx.drawImage(originalImage, 0, 0);
+            
+            // Detect faces
+            showStatus('🔍 Detecting faces...', 'loading');
+            try {
+                faceDetections = await faceapi.detectAllFaces(
+                    originalImage, 
+                    new faceapi.TinyFaceDetectorOptions({
+                        inputSize: 416,
+                        scoreThreshold: detectionThreshold
+                    })
+                ).withFaceLandmarks();
+                
+                if (faceDetections.length > 0) {
+                    // Initialize disabled faces array (all enabled by default)
+                    disabledFaces = new Array(faceDetections.length).fill(false);
+                    
+                    showStatus(`✅ Found ${faceDetections.length} face(s)! Click X to exclude faces, then apply blur/emoji.`, 'success');
+                    controls.style.display = 'flex';
+                    emojiSelector.style.display = 'flex';
+                    customImageUpload.style.display = 'block';
+                    
+                    // Draw preview with boxes
+                    drawFacePreview();
+                    
+                    // Create toggle buttons
+                    createFaceToggles();
+                } else {
+                    showStatus('😕 No faces detected. Try adjusting the sensitivity slider.', 'error');
+                    controls.style.display = 'none';
+                    emojiSelector.style.display = 'none';
+                    customImageUpload.style.display = 'none';
+                    disabledFaces = [];
+                }
+            } catch (error) {
+                showStatus('❌ Error detecting faces: ' + error.message, 'error');
+                console.error('Face detection error:', error);
+            }
+        }
+        
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!modelsLoaded) {
+                showStatus('⏳ Please wait for AI models to load first...', 'loading');
+                return;
+            }
+            
+            showStatus('📷 Loading image...', 'loading');
+            
+            const img = new Image();
+            img.onload = async () => {
+                originalImage = img;
+                
+                // Resize canvas to fit image
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Show sensitivity control
+                sensitivityControl.style.display = 'block';
+                
+                // Detect faces
+                await detectFaces();
+            };
+            
+            img.src = URL.createObjectURL(file);
+        });
+        
+        // Sensitivity slider
+        sensitivitySlider.addEventListener('input', (e) => {
+            detectionThreshold = parseFloat(e.target.value);
+            sliderValue.textContent = detectionThreshold.toFixed(2);
+        });
+        
+        // Re-detect button
+        redetectBtn.addEventListener('click', async () => {
+            if (originalImage) {
+                await detectFaces();
+            }
+        });
+        
+        // Custom image upload handlers
+        uploadCustomBtn.addEventListener('click', () => {
+            customImageInput.click();
+        });
+        
+        customImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const imgData = event.target.result;
+                customImages.push(imgData);
+                saveCustomImages();
+                renderCustomImagesGallery();
+                showStatus('✅ Custom image uploaded!', 'success');
+            };
+            reader.readAsDataURL(file);
+            
+            // Reset input
+            e.target.value = '';
+        });
+        
+        clearCustomBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete all custom images?')) {
+                customImages = [];
+                selectedCustomImage = null;
+                saveCustomImages();
+                renderCustomImagesGallery();
+                showStatus('🗑️ All custom images cleared', 'success');
+            }
+        });
+        
+        // Emoji selector
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedEmoji = e.target.dataset.emoji;
+                selectedCustomImage = null; // Clear custom image selection
+                
+                // Auto-redraw if emojis are already applied
+                if (originalImage && faceDetections.length > 0 && downloadBtn.style.display === 'block') {
+                    applyEmojiOrImage();
+                    showStatus('✅ Emoji updated!', 'success');
+                }
+            });
+        });
+        
+        // Blur faces
+        blurBtn.addEventListener('click', () => {
+            if (!originalImage || faceDetections.length === 0) return;
+            
+            // Redraw original image
+            ctx.drawImage(originalImage, 0, 0);
+            
+            let processedCount = 0;
+            
+            // Blur each detected face (skip disabled ones)
+            faceDetections.forEach((detection, index) => {
+                if (disabledFaces[index]) return; // Skip disabled faces
+                
+                const box = detection.detection.box;
+                
+                // Expand box slightly for better coverage
+                const padding = 20;
+                const x = Math.max(0, box.x - padding);
+                const y = Math.max(0, box.y - padding);
+                const width = Math.min(canvas.width - x, box.width + padding * 2);
+                const height = Math.min(canvas.height - y, box.height + padding * 2);
+                
+                // Extract face region
+                const imageData = ctx.getImageData(x, y, width, height);
+                
+                // Apply blur by downscaling and upscaling
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // Blur effect
+                ctx.filter = 'blur(20px)';
+                ctx.drawImage(tempCanvas, 0, 0, width, height, x, y, width, height);
+                ctx.filter = 'none';
+                
+                processedCount++;
+            });
+            
+            // Remove toggle buttons after processing
+            document.querySelectorAll('.face-toggle').forEach(el => el.remove());
+            
+            showStatus(`✅ ${processedCount} face(s) blurred!`, 'success');
+            downloadBtn.style.display = 'block';
+        });
+        
+        // Apply emoji or custom image to faces
+        function applyEmojiOrImage() {
+            if (!originalImage || faceDetections.length === 0) return;
+            
+            // Redraw original image
+            ctx.drawImage(originalImage, 0, 0);
+            
+            let processedCount = 0;
+            
+            if (selectedCustomImage) {
+                // Use custom image
+                const customImg = new Image();
+                customImg.onload = () => {
+                    faceDetections.forEach((detection, index) => {
+                        if (disabledFaces[index]) return; // Skip disabled faces
+                        
+                        const box = detection.detection.box;
+                        const size = Math.max(box.width, box.height) * 1.2;
+                        
+                        // Draw custom image centered on face
+                        ctx.drawImage(
+                            customImg,
+                            box.x + box.width / 2 - size / 2,
+                            box.y + box.height / 2 - size / 2,
+                            size,
+                            size
+                        );
+                        
+                        processedCount++;
+                    });
+                    
+                    // Remove toggle buttons after processing
+                    document.querySelectorAll('.face-toggle').forEach(el => el.remove());
+                    
+                    showStatus(`✅ ${processedCount} face(s) replaced with custom image!`, 'success');
+                    downloadBtn.style.display = 'block';
+                };
+                customImg.src = selectedCustomImage;
+            } else {
+                // Use emoji
+                faceDetections.forEach((detection, index) => {
+                    if (disabledFaces[index]) return; // Skip disabled faces
+                    
+                    const box = detection.detection.box;
+                    const size = Math.max(box.width, box.height) * 1.2;
+                    
+                    ctx.font = `${size}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(
+                        selectedEmoji, 
+                        box.x + box.width / 2, 
+                        box.y + box.height / 2
+                    );
+                    
+                    processedCount++;
+                });
+                
+                // Remove toggle buttons after processing
+                document.querySelectorAll('.face-toggle').forEach(el => el.remove());
+                
+                showStatus(`✅ ${processedCount} face(s) replaced with emojis!`, 'success');
+                downloadBtn.style.display = 'block';
+            }
+        }
+        
+        // Replace faces with emojis or custom images
+        emojiBtn.addEventListener('click', () => {
+            if (!originalImage || faceDetections.length === 0) return;
+            applyEmojiOrImage();
+        });
+        
+        // Download image
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'privacy-protected-photo.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            showStatus('💾 Photo downloaded!', 'success');
+        });
+        
+        // Reposition toggle buttons on window resize
+        window.addEventListener('resize', () => {
+            if (faceDetections.length > 0 && document.querySelectorAll('.face-toggle').length > 0) {
+                createFaceToggles();
+            }
+        });
+        
+        // Wait for face-api.js to load, then load models
+        window.addEventListener('load', () => {
+            if (typeof faceapi !== 'undefined') {
+                loadModels();
+            } else {
+                showStatus('❌ Error: Face detection library failed to load', 'error');
+            }
+            
+            // Load custom images from localStorage
+            loadCustomImages();
+        });
+    </script>
+</body>
+</html>
