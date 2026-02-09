@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nástroj na ochranu soukromí obličejů 🎭</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background: #f0f0ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area input {
+            display: none;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #764ba2;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        canvas {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .emoji-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .emoji-btn {
+            font-size: 32px;
+            padding: 10px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            min-width: 60px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .emoji-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .emoji-btn.selected {
+            background: #667eea;
+            transform: scale(1.15);
+        }
+        
+        .emoji-btn img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        
+        .custom-image-upload {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .custom-image-upload label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .custom-image-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+        
+        .custom-image-btn:hover {
+            background: #764ba2;
+        }
+        
+        .custom-images-gallery {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .custom-image-item {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+        
+        .custom-image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #667eea;
+            cursor: pointer;
+        }
+        
+        .custom-image-item .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .sensitivity-control {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .sensitivity-control label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .slider {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .slider-value {
+            min-width: 80px;
+            text-align: center;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .face-toggle {
+            position: absolute;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        
+        .face-toggle:hover {
+            transform: scale(1.2);
+            background: rgba(200, 0, 0, 1);
+        }
+        
+        .face-toggle.disabled {
+            background: rgba(100, 100, 100, 0.8);
+        }
+        
+        .face-toggle.disabled:hover {
+            background: rgba(80, 80, 80, 1);
+        }
+        
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .language-switcher a {
+            display: inline-block;
+            padding: 8px 16px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        
+        .language-switcher a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="language-switcher">
+        <a href="index.html">🇬🇧 English</a>
+    </div>
+    <div class="container">
+        <h1>🎭 Nástroj na ochranu soukromí obličejů</h1>
+        <p class="subtitle">Chraňte své soukromí rozmazáním nebo skrytím obličejů na fotografiích - vše se děje ve vašem zařízení!</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <h2>📸 Vyberte nebo vyfoťte fotografii</h2>
+            <p>Vyberte, jak chcete poskytnout obrázek</p>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px; flex-wrap: wrap;">
+                <button id="galleryBtn" style="background: #667eea;">📁 Vybrat z galerie</button>
+                <button id="cameraBtn" style="background: #764ba2;">📷 Vyfotit</button>
+            </div>
+        </div>
+        
+        <div class="sensitivity-control" id="sensitivityControl">
+            <label>🎯 Citlivost detekce</label>
+            <div class="slider-container">
+                <span>Méně</span>
+                <input type="range" min="0.1" max="0.9" step="0.05" value="0.5" class="slider" id="sensitivitySlider">
+                <span>Více</span>
+                <span class="slider-value" id="sliderValue">0.50</span>
+            </div>
+            <button id="redetectBtn" style="margin-top: 10px; width: 100%;">🔄 Znovu detekovat obličeje</button>
+        </div>
+        
+        <div class="custom-image-upload" id="customImageUpload">
+            <label>🖼️ Vlastní obrázky</label>
+            <input type="file" id="customImageInput" accept="image/*" style="display: none;">
+            <button class="custom-image-btn" id="uploadCustomBtn">📤 Nahrát vlastní obrázek</button>
+            <button class="custom-image-btn" id="clearCustomBtn" style="background: #dc3545;">🗑️ Smazat vše</button>
+            <div class="custom-images-gallery" id="customImagesGallery"></div>
+        </div>
+        
+        <div class="emoji-selector" id="emojiSelector" style="display: none;">
+            <button class="emoji-btn" data-emoji="😀">😀</button>
+            <button class="emoji-btn" data-emoji="😎">😎</button>
+            <button class="emoji-btn" data-emoji="🤖">🤖</button>
+            <button class="emoji-btn selected" data-emoji="😊">😊</button>
+            <button class="emoji-btn" data-emoji="🎭">🎭</button>
+            <button class="emoji-btn" data-emoji="😂">😂</button>
+            <button class="emoji-btn" data-emoji="🥳">🥳</button>
+            <button class="emoji-btn" data-emoji="😇">😇</button>
+            <button class="emoji-btn" data-emoji="🤩">🤩</button>
+            <button class="emoji-btn" data-emoji="😴">😴</button>
+            <button class="emoji-btn" data-emoji="🤔">🤔</button>
+            <button class="emoji-btn" data-emoji="😱">😱</button>
+            <button class="emoji-btn" data-emoji="👽">👽</button>
+            <button class="emoji-btn" data-emoji="👻">👻</button>
+            <button class="emoji-btn" data-emoji="🎃">🎃</button>
+            <button class="emoji-btn" data-emoji="💀">💀</button>
+            <button class="emoji-btn" data-emoji="🐶">🐶</button>
+            <button class="emoji-btn" data-emoji="🐱">🐱</button>
+            <button class="emoji-btn" data-emoji="🐼">🐼</button>
+            <button class="emoji-btn" data-emoji="🦄">🦄</button>
+        </div>
+        
+        <div class="controls" style="display: none;" id="controls">
+            <button id="blurBtn">🌫️ Rozmazat obličeje</button>
+            <button id="emojiBtn">😊 Emoji obličeje</button>
+            <button id="downloadBtn" style="display: none;">💾 Stáhnout</button>
+        </div>
+        
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="canvas"></canvas>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div class="info">
+            <strong>🔒 Jak to funguje:</strong><br>
+            1️⃣ Vyberte fotografii ze svého zařízení nebo vyfoťte novou fotoaparátem<br>
+            2️⃣ Umělá inteligence automaticky detekuje všechny obličeje (děje se ve VAŠEM zařízení)<br>
+            3️⃣ Klikněte na červené tlačítko ✕ u jakéhokoliv obličeje, abyste ho vyloučili ze zpracování<br>
+            4️⃣ Vyberte si z více než 20 emoji nebo nahrajte vlastní obrázky<br>
+            5️⃣ Klikněte pro rozmazání obličejů nebo jejich nahrazení emoji/obrázky (pouze povolené obličeje)<br>
+            6️⃣ Stáhněte si svou fotografii chráněnou soukromím!<br><br>
+            <strong>✨ Soukromí na prvním místě:</strong> Veškeré zpracování probíhá ve vašem prohlížeči. Žádné fotografie nejsou odesílány na žádný server!<br>
+            <strong>🖼️ Vlastní obrázky:</strong> Nahrajte si vlastní obrázky pro zakrytí obličejů - jsou uloženy lokálně ve vašem prohlížeči!
+        </div>
+    </div>
+
+    <script>
+        // Globální proměnné
+        let selectedEmoji = '😊';
+        let selectedCustomImage = null; // Pro režim vlastních obrázků
+        let faceDetections = [];
+        let disabledFaces = []; // Sledování, které obličeje jsou zakázané
+        let originalImage = null;
+        let modelsLoaded = false;
+        let detectionThreshold = 0.5;
+        let customImages = []; // Uložení vlastních obrázků
+        
+        // DOM elementy
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const galleryBtn = document.getElementById('galleryBtn');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        const controls = document.getElementById('controls');
+        const blurBtn = document.getElementById('blurBtn');
+        const emojiBtn = document.getElementById('emojiBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const emojiSelector = document.getElementById('emojiSelector');
+        const sensitivityControl = document.getElementById('sensitivityControl');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+        const sliderValue = document.getElementById('sliderValue');
+        const redetectBtn = document.getElementById('redetectBtn');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const customImageUpload = document.getElementById('customImageUpload');
+        const customImageInput = document.getElementById('customImageInput');
+        const uploadCustomBtn = document.getElementById('uploadCustomBtn');
+        const clearCustomBtn = document.getElementById('clearCustomBtn');
+        const customImagesGallery = document.getElementById('customImagesGallery');
+        
+        // Zobrazit stavovou zprávu
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+        }
+        
+        // Načíst vlastní obrázky z localStorage
+        function loadCustomImages() {
+            const stored = localStorage.getItem('faceblur_custom_images');
+            if (stored) {
+                try {
+                    customImages = JSON.parse(stored);
+                    renderCustomImagesGallery();
+                } catch (e) {
+                    console.error('Chyba při načítání vlastních obrázků:', e);
+                    customImages = [];
+                }
+            }
+        }
+        
+        // Uložit vlastní obrázky do localStorage
+        function saveCustomImages() {
+            try {
+                localStorage.setItem('faceblur_custom_images', JSON.stringify(customImages));
+            } catch (e) {
+                console.error('Chyba při ukládání vlastních obrázků:', e);
+                showStatus('⚠️ Dosažen limit úložiště. Prosím smažte některé obrázky.', 'error');
+            }
+        }
+        
+        // Vykreslit galerii vlastních obrázků
+        function renderCustomImagesGallery() {
+            customImagesGallery.innerHTML = '';
+            customImages.forEach((imgData, index) => {
+                const item = document.createElement('div');
+                item.className = 'custom-image-item';
+                
+                const img = document.createElement('img');
+                img.src = imgData;
+                img.onclick = () => selectCustomImage(imgData);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '×';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteCustomImage(index);
+                };
+                
+                item.appendChild(img);
+                item.appendChild(deleteBtn);
+                customImagesGallery.appendChild(item);
+            });
+        }
+        
+        // Vybrat vlastní obrázek
+        function selectCustomImage(imgData) {
+            selectedCustomImage = imgData;
+            selectedEmoji = null;
+            
+            // Zrušit výběr všech emoji tlačítek
+            document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+            
+            // Automaticky překreslit, pokud jsou vlastní obrázky již aplikovány
+            if (originalImage && faceDetections.length > 0 && downloadBtn.style.display === 'block') {
+                applyEmojiOrImage();
+                showStatus('✅ Vlastní obrázek aktualizován!', 'success');
+            } else {
+                showStatus('✅ Vlastní obrázek vybrán! Klikněte na "😊 Emoji obličeje" pro aplikaci.', 'success');
+            }
+        }
+        
+        // Smazat vlastní obrázek
+        function deleteCustomImage(index) {
+            customImages.splice(index, 1);
+            saveCustomImages();
+            renderCustomImagesGallery();
+            
+            if (customImages.length === 0) {
+                selectedCustomImage = null;
+            }
+            
+            showStatus('🗑️ Vlastní obrázek smazán', 'success');
+        }
+        
+        // Vytvořit přepínací tlačítka pro každý obličej
+        function createFaceToggles() {
+            // Odstranit existující přepínače
+            document.querySelectorAll('.face-toggle').forEach(el => el.remove());
+            
+            if (!faceDetections.length) return;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            const scaleX = canvasRect.width / canvas.width;
+            const scaleY = canvasRect.height / canvas.height;
+            
+            faceDetections.forEach((detection, index) => {
+                const box = detection.detection.box;
+                const toggle = document.createElement('div');
+                toggle.className = 'face-toggle';
+                toggle.textContent = '✕';
+                toggle.dataset.index = index;
+                
+                // Umístit v pravém horním rohu rámečku obličeje
+                const left = canvasRect.left + (box.x + box.width - 15) * scaleX;
+                const top = canvasRect.top + (box.y - 15) * scaleY;
+                
+                toggle.style.left = `${left}px`;
+                toggle.style.top = `${top}px`;
+                
+                // Zkontrolovat, zda je obličej zakázán
+                if (disabledFaces[index]) {
+                    toggle.classList.add('disabled');
+                }
+                
+                toggle.addEventListener('click', () => toggleFace(index));
+                
+                document.body.appendChild(toggle);
+            });
+        }
+        
+        // Přepnout stav obličeje povoleno/zakázáno
+        function toggleFace(index) {
+            disabledFaces[index] = !disabledFaces[index];
+            
+            // Aktualizovat vzhled přepínacího tlačítka
+            const toggle = document.querySelector(`.face-toggle[data-index="${index}"]`);
+            if (toggle) {
+                toggle.classList.toggle('disabled');
+            }
+            
+            // Překreslit náhled s aktualizovaným stavem
+            drawFacePreview();
+            
+            const enabledCount = faceDetections.length - disabledFaces.filter(d => d).length;
+            showStatus(`✅ ${enabledCount} z ${faceDetections.length} obličejů bude zpracováno`, 'success');
+        }
+        
+        // Nakreslit náhled obličeje s rámečky
+        function drawFacePreview() {
+            if (!originalImage) return;
+            
+            ctx.drawImage(originalImage, 0, 0);
+            
+            faceDetections.forEach((detection, index) => {
+                const box = detection.detection.box;
+                
+                if (disabledFaces[index]) {
+                    // Nakreslit červený křížek přes zakázané obličeje
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(box.x, box.y, box.width, box.height);
+                    
+                    // Nakreslit X
+                    ctx.beginPath();
+                    ctx.moveTo(box.x, box.y);
+                    ctx.lineTo(box.x + box.width, box.y + box.height);
+                    ctx.moveTo(box.x + box.width, box.y);
+                    ctx.lineTo(box.x, box.y + box.height);
+                    ctx.stroke();
+                } else {
+                    // Nakreslit normální modrý rámeček pro povolené obličeje
+                    ctx.strokeStyle = '#667eea';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(box.x, box.y, box.width, box.height);
+                }
+            });
+        }
+        
+        // Načíst modely pro detekci obličejů
+        async function loadModels() {
+            showStatus('🔄 Načítání AI modelů (může to chvíli trvat)...', 'loading');
+            try {
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                modelsLoaded = true;
+                showStatus('✅ AI modely načteny! Připraveno chránit soukromí!', 'success');
+                setTimeout(() => status.style.display = 'none', 3000);
+            } catch (error) {
+                showStatus('❌ Chyba při načítání modelů: ' + error.message, 'error');
+                console.error('Chyba načítání modelu:', error);
+            }
+        }
+        
+        // Obsloužit tlačítko galerie
+        galleryBtn.addEventListener('click', () => {
+            if (!modelsLoaded) {
+                showStatus('⏳ Prosím počkejte na načtení AI modelů...', 'loading');
+                return;
+            }
+            imageInput.click();
+        });
+        
+        // Obsloužit tlačítko fotoaparátu
+        cameraBtn.addEventListener('click', () => {
+            if (!modelsLoaded) {
+                showStatus('⏳ Prosím počkejte na načtení AI modelů...', 'loading');
+                return;
+            }
+            cameraInput.click();
+        });
+        
+        // Funkce pro detekci obličejů
+        async function detectFaces() {
+            if (!originalImage) return;
+            
+            // Nakreslit původní obrázek
+            ctx.drawImage(originalImage, 0, 0);
+            
+            // Detekovat obličeje
+            showStatus('🔍 Detekuji obličeje...', 'loading');
+            try {
+                faceDetections = await faceapi.detectAllFaces(
+                    originalImage, 
+                    new faceapi.TinyFaceDetectorOptions({
+                        inputSize: 416,
+                        scoreThreshold: detectionThreshold
+                    })
+                ).withFaceLandmarks();
+                
+                if (faceDetections.length > 0) {
+                    // Inicializovat pole zakázaných obličejů (všechny povoleny ve výchozím nastavení)
+                    disabledFaces = new Array(faceDetections.length).fill(false);
+                    
+                    showStatus(`✅ Nalezeno ${faceDetections.length} obličejů! Klikněte na X pro vyloučení obličejů, pak aplikujte rozmazání/emoji.`, 'success');
+                    controls.style.display = 'flex';
+                    emojiSelector.style.display = 'flex';
+                    customImageUpload.style.display = 'block';
+                    
+                    // Nakreslit náhled s rámečky
+                    drawFacePreview();
+                    
+                    // Vytvořit přepínací tlačítka
+                    createFaceToggles();
+                } else {
+                    showStatus('😕 Žádné obličeje nebyly detekovány. Zkuste upravit posuvník citlivosti.', 'error');
+                    controls.style.display = 'none';
+                    emojiSelector.style.display = 'none';
+                    customImageUpload.style.display = 'none';
+                    disabledFaces = [];
+                }
+            } catch (error) {
+                showStatus('❌ Chyba při detekci obličejů: ' + error.message, 'error');
+                console.error('Chyba detekce obličejů:', error);
+            }
+        }
+        
+        // Obsloužit načítání obrázku (sdílená funkce pro oba vstupy)
+        async function handleImageFile(file) {
+            if (!file) return;
+            
+            if (!modelsLoaded) {
+                showStatus('⏳ Prosím počkejte na načtení AI modelů...', 'loading');
+                return;
+            }
+            
+            showStatus('📷 Načítám obrázek...', 'loading');
+            
+            const img = new Image();
+            img.onload = async () => {
+                originalImage = img;
+                
+                // Změnit velikost plátna podle obrázku
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Zobrazit ovládání citlivosti
+                sensitivityControl.style.display = 'block';
+                
+                // Detekovat obličeje
+                await detectFaces();
+            };
+            
+            img.src = URL.createObjectURL(file);
+        }
+        
+        // Obsloužit vstup z galerie
+        imageInput.addEventListener('change', async (e) => {
+            await handleImageFile(e.target.files[0]);
+        });
+        
+        // Obsloužit vstup z fotoaparátu
+        cameraInput.addEventListener('change', async (e) => {
+            await handleImageFile(e.target.files[0]);
+        });
+        
+        // Posuvník citlivosti
+        sensitivitySlider.addEventListener('input', (e) => {
+            detectionThreshold = parseFloat(e.target.value);
+            sliderValue.textContent = detectionThreshold.toFixed(2);
+        });
+        
+        // Tlačítko pro opětovnou detekci
+        redetectBtn.addEventListener('click', async () => {
+            if (originalImage) {
+                await detectFaces();
+            }
+        });
+        
+        // Obsluha nahrávání vlastních obrázků
+        uploadCustomBtn.addEventListener('click', () => {
+            customImageInput.click();
+        });
+        
+        customImageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const imgData = event.target.result;
+                customImages.push(imgData);
+                saveCustomImages();
+                renderCustomImagesGallery();
+                showStatus('✅ Vlastní obrázek nahrán!', 'success');
+            };
+            reader.readAsDataURL(file);
+            
+            // Resetovat vstup
+            e.target.value = '';
+        });
+        
+        clearCustomBtn.addEventListener('click', () => {
+            if (confirm('Opravdu chcete smazat všechny vlastní obrázky?')) {
+                customImages = [];
+                selectedCustomImage = null;
+                saveCustomImages();
+                renderCustomImagesGallery();
+                showStatus('🗑️ Všechny vlastní obrázky smazány', 'success');
+            }
+        });
+        
+        // Výběr emoji
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+                e.target.classList.add('selected');
+                selectedEmoji = e.target.dataset.emoji;
+                selectedCustomImage = null; // Vymazat výběr vlastního obrázku
+                
+                // Automaticky překreslit, pokud jsou emoji již aplikována
+                if (originalImage && faceDetections.length > 0 && downloadBtn.style.display === 'block') {
+                    applyEmojiOrImage();
+                    showStatus('✅ Emoji aktualizováno!', 'success');
+                }
+            });
+        });
+        
+        // Rozmazat obličeje
+        blurBtn.addEventListener('click', () => {
+            if (!originalImage || faceDetections.length === 0) return;
+            
+            // Překreslit původní obrázek
+            ctx.drawImage(originalImage, 0, 0);
+            
+            let processedCount = 0;
+            
+            // Rozmazat každý detekovaný obličej (přeskočit zakázané)
+            faceDetections.forEach((detection, index) => {
+                if (disabledFaces[index]) return; // Přeskočit zakázané obličeje
+                
+                const box = detection.detection.box;
+                
+                // Mírně rozšířit rámeček pro lepší pokrytí
+                const padding = 20;
+                const x = Math.max(0, box.x - padding);
+                const y = Math.max(0, box.y - padding);
+                const width = Math.min(canvas.width - x, box.width + padding * 2);
+                const height = Math.min(canvas.height - y, box.height + padding * 2);
+                
+                // Extrahovat oblast obličeje
+                const imageData = ctx.getImageData(x, y, width, height);
+                
+                // Aplikovat rozmazání zmenšením a zvětšením
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // Efekt rozmazání
+                ctx.filter = 'blur(20px)';
+                ctx.drawImage(tempCanvas, 0, 0, width, height, x, y, width, height);
+                ctx.filter = 'none';
+                
+                processedCount++;
+            });
+            
+            // Odstranit přepínací tlačítka po zpracování
+            document.querySelectorAll('.face-toggle').forEach(el => el.remove());
+            
+            showStatus(`✅ ${processedCount} obličejů rozmazáno!`, 'success');
+            downloadBtn.style.display = 'block';
+        });
+        
+        // Aplikovat emoji nebo vlastní obrázek na obličeje
+        function applyEmojiOrImage() {
+            if (!originalImage || faceDetections.length === 0) return;
+            
+            // Překreslit původní obrázek
+            ctx.drawImage(originalImage, 0, 0);
+            
+            let processedCount = 0;
+            
+            if (selectedCustomImage) {
+                // Použít vlastní obrázek
+                const customImg = new Image();
+                customImg.onload = () => {
+                    faceDetections.forEach((detection, index) => {
+                        if (disabledFaces[index]) return; // Přeskočit zakázané obličeje
+                        
+                        const box = detection.detection.box;
+                        const size = Math.max(box.width, box.height) * 1.2;
+                        
+                        // Nakreslit vlastní obrázek vycentrovaný na obličej
+                        ctx.drawImage(
+                            customImg,
+                            box.x + box.width / 2 - size / 2,
+                            box.y + box.height / 2 - size / 2,
+                            size,
+                            size
+                        );
+                        
+                        processedCount++;
+                    });
+                    
+                    // Odstranit přepínací tlačítka po zpracování
+                    document.querySelectorAll('.face-toggle').forEach(el => el.remove());
+                    
+                    showStatus(`✅ ${processedCount} obličejů nahrazeno vlastním obrázkem!`, 'success');
+                    downloadBtn.style.display = 'block';
+                };
+                customImg.src = selectedCustomImage;
+            } else {
+                // Použít emoji
+                faceDetections.forEach((detection, index) => {
+                    if (disabledFaces[index]) return; // Přeskočit zakázané obličeje
+                    
+                    const box = detection.detection.box;
+                    const size = Math.max(box.width, box.height) * 1.2;
+                    
+                    ctx.font = `${size}px Arial`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(
+                        selectedEmoji, 
+                        box.x + box.width / 2, 
+                        box.y + box.height / 2
+                    );
+                    
+                    processedCount++;
+                });
+                
+                // Odstranit přepínací tlačítka po zpracování
+                document.querySelectorAll('.face-toggle').forEach(el => el.remove());
+                
+                showStatus(`✅ ${processedCount} obličejů nahrazeno emoji!`, 'success');
+                downloadBtn.style.display = 'block';
+            }
+        }
+        
+        // Nahradit obličeje emoji nebo vlastními obrázky
+        emojiBtn.addEventListener('click', () => {
+            if (!originalImage || faceDetections.length === 0) return;
+            applyEmojiOrImage();
+        });
+        
+        // Stáhnout obrázek
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'fotografie-chranena-soukromim.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            showStatus('💾 Fotografie stažena!', 'success');
+        });
+        
+        // Přemístit přepínací tlačítka při změně velikosti okna
+        window.addEventListener('resize', () => {
+            if (faceDetections.length > 0 && document.querySelectorAll('.face-toggle').length > 0) {
+                createFaceToggles();
+            }
+        });
+        
+        // Počkat na načtení face-api.js, pak načíst modely
+        window.addEventListener('load', () => {
+            if (typeof faceapi !== 'undefined') {
+                loadModels();
+            } else {
+                showStatus('❌ Chyba: Knihovna pro detekci obličejů se nepodařilo načíst', 'error');
+            }
+            
+            // Načíst vlastní obrázky z localStorage
+            loadCustomImages();
+        });
+    </script>
+</body>
+</html>
