@@ -20,6 +20,11 @@ Visit: https://vpavlin.github.io/faceblur/
 
 Simply open `index.html` in your web browser. No server required!
 
+### Language Versions
+
+- 🇬🇧 English: `index.html`
+- 🇨🇿 Czech (Čeština): `index.cs.html` - Perfect for Czech elementary school students!
+
 ## Privacy
 
 - ✅ All processing happens in your browser

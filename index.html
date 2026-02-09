@@ -336,9 +336,38 @@
         .face-toggle.disabled:hover {
             background: rgba(80, 80, 80, 1);
         }
+        
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .language-switcher a {
+            display: inline-block;
+            padding: 8px 16px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        
+        .language-switcher a:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
+    <div class="language-switcher">
+        <a href="index.cs.html">🇨🇿 Čeština</a>
+    </div>
     <div class="container">
         <h1>🎭 Face Privacy Tool</h1>
         <p class="subtitle">Protect your privacy by blurring or hiding faces in photos - everything happens on your device!</p>
